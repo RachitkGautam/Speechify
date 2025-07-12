@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Speechify - Speech Recognition App</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container-fluid">
+    <header>
+      <h1 class="text-center">Speechify</h1>
+    </header>
+    <section class="main-section">
+      <div class="text-box">
+        <div class="words" contenteditable="true"></div>
+      </div>
+      <div class="text-center mt-4 button-container">
+        <button id="start" class="btn btn-gold btn-lg">Start Listening</button>
+        <button id="stop" class="btn btn-gold btn-lg">Stop Listening</button>
+        <button id="save" class="btn btn-gold btn-lg">Save as Document</button>
+        <button id="read-aloud" class="btn btn-gold btn-lg">Read Aloud</button>
+        <button id="pause" class="btn btn-gold btn-lg">Pause</button>
+        <button id="clear" class="btn btn-gold btn-lg">Clear</button>
+      </div>
+    </section>
+    
+    <!-- Bold Statement -->
+    <footer>
+      <div class="bold-statement text-center">
+        <p>Say whatever you can, Do whatever you can!</p>
+      </div>
+    </footer>
+  </div>
+
+  <script type="text/javascript">
+    window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.interimResults = true;
+    recognition.continuous = true;
+
+    let isListening = false;
+    const synth = window.speechSynthesis;
+    let utterance = null;
+
+    const voiceCommands = {
+      "stop listening": () => {
+        isListening = false;
+        recognition.stop();
+      },
+      "save as document": () => {
+        const words = document.querySelector('.words').textContent;
+        const blob = new Blob([words], { type: 'text/plain' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'speechify_output.txt';
+        a.click();
+      },
+      "read aloud": () => {
+        if (isListening) {
+          isListening = false;
+          recognition.stop();
+        }
+        const text = document.querySelector('.words').textContent;
+        if (text && !synth.speaking) {
+          utterance = new SpeechSynthesisUtterance(text);
+          synth.speak(utterance);
+        } else if (synth.paused) {
+          synth.resume();
+        }
+      },
+      "pause": () => {
+        if (synth.speaking && !synth.paused) {
+          synth.pause();
+        }
+      },
+      "clear": () => {
+        document.querySelector('.words').textContent = '';
+      }
+    };
+
+    recognition.addEventListener('result', (e) => {
+      const transcript = Array.from(e.results)
+        .map((result) => result[0])
+        .map((result) => result.transcript)
+        .join('')
+        .toLowerCase();
+
+      const matchedCommand = Object.keys(voiceCommands).find((command) =>
+        transcript.includes(command)
+      );
+
+      if (matchedCommand) {
+        voiceCommands[matchedCommand]();
+      } else {
+        const words = document.querySelector('.words');
+        words.textContent += transcript;
+      }
+    });
+
+    recognition.addEventListener('end', () => {
+      if (isListening) {
+        recognition.start();
+      }
+    });
+
+    document.getElementById('start').addEventListener('click', () => {
+      if (!isListening) {
+        isListening = true;
+        recognition.start();
+      }
+    });
+
+    document.getElementById('stop').addEventListener('click', () => {
+      isListening = false;
+      recognition.stop();
+    });
+
+    document.getElementById('save').addEventListener('click', () => {
+      const words = document.querySelector('.words').textContent;
+      const blob = new Blob([words], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'speechify_output.txt';
+      a.click();
+    });
+
+    document.getElementById('read-aloud').addEventListener('click', () => {
+      if (isListening) {
+        isListening = false;
+        recognition.stop();
+      }
+      const text = document.querySelector('.words').textContent;
+      if (text && !synth.speaking) {
+        utterance = new SpeechSynthesisUtterance(text);
+        synth.speak(utterance);
+      } else if (synth.paused) {
+        synth.resume();
+      }
+    });
+
+    document.getElementById('pause').addEventListener('click', () => {
+      if (synth.speaking && !synth.paused) {
+        synth.pause();
+      }
+    });
+
+    document.getElementById('clear').addEventListener('click', () => {
+      document.querySelector('.words').textContent = '';
+    });
+  </script>
+
+  <style>
+    /* Global Styles */
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #000;
+      margin: 0;
+      padding: 0;
+      color: white;
+      overflow: hidden;
+      animation: bgAnimation 10s linear infinite;
+    }
+
+    /* Header Styles */
+    h1 {
+      font-size: 3rem;
+      font-weight: 600;
+      color: #FFD700; /* Gold color */
+      text-align: center;
+      padding-top: 50px;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    /* Main Section */
+    .main-section {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      margin-top: 30px;
+    }
+
+    .text-box {
+      width: 80%;
+      max-width: 600px;
+      min-height: 200px;
+      background: #222;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.4);
+      margin-bottom: 30px;
+      animation: slideIn 0.5s ease-out;
+      overflow-y: auto;
+    }
+
+    .words {
+      font-size: 1.6rem;
+      line-height: 1.8;
+      color: #f1f1f1;
+    }
+
+    /* Button Styling */
+    .button-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .btn-gold {
+      background-color: #FFD700;
+      border: none;
+      border-radius: 30px;
+      padding: 12px 30px;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      color: #333;
+      transition: all 0.3s ease-in-out;
+    }
+
+    .btn-gold:hover {
+      background-color: #FFCC00;
+      transform: scale(1.05);
+    }
+
+    /* Background Animation */
+    @keyframes bgAnimation {
+      0% {
+        background-color: #000;
+      }
+      50% {
+        background-color: #333;
+      }
+      100% {
+        background-color: #000;
+      }
+    }
+
+    /* Fade-in Animation */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    /* Slide-in Animation */
+    @keyframes slideIn {
+      from {
+        transform: translateY(-20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    /* Bold Statement Styling */
+    footer {
+      margin-top: 50px;
+      padding: 30px 0;
+    }
+
+    .bold-statement p {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #FFD700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4);
+      animation: fadeIn 2s ease-in-out;
+    }
+  </style>
+</body>
+</html>
